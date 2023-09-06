@@ -1,5 +1,5 @@
 'use client';
-import { Contents } from '@types/Content';
+import { Contents } from '@/types/Content';
 import { create } from 'zustand';
 
 export type PostStore = {
