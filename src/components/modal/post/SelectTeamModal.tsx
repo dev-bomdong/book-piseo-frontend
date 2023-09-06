@@ -5,38 +5,15 @@ import { ModalHeader } from '../common/ModalHeader';
 import { ModalContent } from '../common/ModalContent';
 import { ModalFooter } from '../common/ModalFooter';
 import { TeamListItem } from '@components/post/TeamListItem';
-import { TeamInfo } from '@models/userInfo';
 import { useEffect, useState } from 'react';
-import { useSetPostStore } from '@stores/usePostStore';
+import { usePostStore, useSetPostStore } from '@stores/usePostStore';
 import { getUserInfo } from '@apis/userInfoApi';
 import { AffiliatedTeamInfo } from '@models/team.model';
-
-// api 연동되면 삭제
-const dummy: TeamInfo[] = [
-	{
-		teamId: 'id1',
-		teamName: '책을 피서 운영팀',
-		teamDescription: 'string',
-		teamImg: 'string',
-		isMaster: true,
-	},
-	{
-		teamId: 'id2',
-		teamName: '소속팀',
-		teamDescription: 'string',
-		teamImg: 'string',
-		isMaster: true,
-	},
-	{
-		teamId: 'id3',
-		teamName: '개인 독서',
-		teamDescription: 'string',
-		teamImg: 'string',
-		isMaster: true,
-	},
-];
+import useStore from '@hooks/useStore';
+import { useAuthStore } from '@stores/useAuthStore';
 
 export const SelectTeamModal = () => {
+	const store = useStore(useAuthStore, (state) => state);
 	const [teamList, setTeamList] = useState<AffiliatedTeamInfo[]>([]);
 	const [selectedTeam, setSelectedTeam] = useState<{ teamId: string; teamName: string }>({
 		teamId: '',
@@ -45,15 +22,16 @@ export const SelectTeamModal = () => {
 
 	const isModalOpen = useSelectTeamState();
 	const changeModalState = useModalActions();
+	const postStore = usePostStore();
 	const setPostStore = useSetPostStore();
 
-	const isSelected = (item: TeamInfo) => item.teamId === selectedTeam.teamId;
+	const isSelected = (item: AffiliatedTeamInfo) => item.teamId === selectedTeam.teamId;
 
 	const handleCloseModal = () => {
 		changeModalState(ModalType.selectTeam);
 	};
 
-	const handleClickItem = (item: TeamInfo) => {
+	const handleClickItem = (item: AffiliatedTeamInfo) => {
 		// 선택된 아이템일 경우 선택 해제
 		if (isSelected(item)) {
 			return setSelectedTeam({ teamId: '', teamName: '' });
@@ -70,7 +48,8 @@ export const SelectTeamModal = () => {
 	 * fetch TeamList
 	 */
 	const getTeamList = async () => {
-		const res = await getUserInfo();
+		if (!store?.token) return;
+		const res = await getUserInfo({ token: store?.token });
 		if (!res) {
 			return;
 		}
@@ -79,7 +58,8 @@ export const SelectTeamModal = () => {
 
 	useEffect(() => {
 		getTeamList();
-	}, []);
+		// eslint-disable-next-line
+	}, [store?.token]);
 
 	return (
 		<ModalContainer isOpen={isModalOpen}>
@@ -87,11 +67,11 @@ export const SelectTeamModal = () => {
 			<ModalContent>
 				<div className="rem:w-[800px] rem:h-[710px] justify-center">
 					<ul className="flex flex-col rem:gap-[30px]">
-						{dummy.map((item) => (
+						{teamList.map((item) => (
 							<TeamListItem
 								key={item.teamId}
 								info={item}
-								isSelected={item.teamId === selectedTeam.teamId}
+								isSelected={item.teamId === selectedTeam.teamId || item.teamId === postStore.teamId}
 								handleClickItem={() => {
 									handleClickItem(item);
 								}}

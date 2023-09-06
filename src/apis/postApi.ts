@@ -30,17 +30,25 @@ export const getNaverBookList = (query: string) => {
 /*
  * 게시글 작성
  * */
-export const postContent = async (params: ContentsSaveRequest) => {
+
+export interface ApiResult {
+	result: number;
+	data: any;
+}
+
+export const postContent = async ({ token, param }: { token: string; param: ContentsSaveRequest }) => {
 	return fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/contents`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
+			'User-Token': token,
 		},
 		cache: 'no-cache',
-		mode: 'no-cors',
-		credentials: 'same-origin',
-		redirect: 'follow',
-		referrer: 'no-referrer',
-		body: JSON.stringify(params),
-	});
+		body: JSON.stringify(param),
+	})
+		.then(async (res) => {
+			const data = await res.json();
+			return { result: res.status, data } as ApiResult;
+		})
+		.catch((e) => console.warn(e));
 };
